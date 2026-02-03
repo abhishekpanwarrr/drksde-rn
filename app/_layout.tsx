@@ -11,7 +11,7 @@ export const unstable_settings = {
 
 export default function RootLayout() {
   return (
-    <React.Fragment>
+    <>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen
@@ -24,6 +24,6 @@ export default function RootLayout() {
         />
       </Stack>
       <StatusBar style="auto" />
-    </React.Fragment>
+    </>
   );
 }

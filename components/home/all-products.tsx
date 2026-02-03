@@ -1,27 +1,38 @@
-import { products } from "@/data/products";
+import { Product } from "@/types/data";
+import { apiRequest } from "@/utils/api";
 import { FlashList } from "@shopify/flash-list";
 import { useRouter } from "expo-router";
-import { FC } from "react";
+import { FC, useEffect, useState } from "react";
 import { Dimensions, Image, Pressable, Text, View } from "react-native";
 
 const GAP = 16;
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = (width - GAP * 3) / 2;
+const PLACEHOLDER_IMAGE = "https://picsum.photos/600/600";
 
 const AllProducts = () => {
+  const [products, setProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    const getProducts = async () => {
+      const { data } = await apiRequest("/products");
+      setProducts(data);
+    };
+    getProducts();
+  }, []);
   return (
     <View className="flex-1">
       <FlashList
         data={products}
         numColumns={2}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item) => item?.product_id?.toString()}
         contentContainerStyle={{
           paddingHorizontal: GAP,
           paddingBottom: GAP,
         }}
         renderItem={({ item, index }) => (
           <View style={{ width: CARD_WIDTH, marginBottom: GAP }}>
-            <Product item={item} index={index} />
+            <ProductCard item={item} index={index} />
           </View>
         )}
       />
@@ -31,37 +42,37 @@ const AllProducts = () => {
 
 export default AllProducts;
 
-export const Product: FC<ProductProps> = ({ item, index }) => {
+export const ProductCard: FC<ProductCardProps> = ({ item, index }) => {
   const router = useRouter();
+  const imageUrl = item.primary_image || item.images?.[0]?.image_url || PLACEHOLDER_IMAGE;
+
+  const price = Number(item.sale_price ?? item.base_price);
 
   return (
     <Pressable
-      onPress={() => router.push(`/product/${item.id}`)}
-      className={`bg-white rounded-2xl overflow-hidden elevation-3 ${index % 2 !== 1 && "mr-2"}`}
+      onPress={() => router.push(`/product/${item.product_id}`)}
+      className={`bg-white rounded-2xl overflow-hidden elevation-3 ${
+        index % 2 === 0 ? "mr-2" : ""
+      }`}
     >
-      <Image
-        source={{ uri: item.image }}
-        style={{ width: "100%", height: 180 }}
-        resizeMode="cover"
-      />
+      <Image source={{ uri: imageUrl }} style={{ width: "100%", height: 180 }} resizeMode="cover" />
 
-      {/* FIXED HEIGHT CONTENT */}
       <View className="p-3 min-h-[72px] justify-between">
         <Text
-          numberOfLines={2} // ✅ CLAMP TEXT
+          numberOfLines={2}
           ellipsizeMode="tail"
           className="text-base font-semibold text-neutral-900"
         >
           {item.name}
         </Text>
 
-        <Text className="mt-1 text-sm text-neutral-600">{item.price}</Text>
+        <Text className="mt-1 text-sm text-neutral-600">₹{price.toFixed(2)}</Text>
       </View>
     </Pressable>
   );
 };
 
-interface ProductProps {
-  item: { id: number; name: string; price: string; image: string };
+interface ProductCardProps {
+  item: Product;
   index: number;
 }
