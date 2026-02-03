@@ -2,17 +2,12 @@ import { products } from "@/data/products";
 import { FlashList } from "@shopify/flash-list";
 import { useRouter } from "expo-router";
 import { FC } from "react";
-import { Dimensions, Image, Pressable, Text, View } from "react-native";
-
-const { width } = Dimensions.get("window");
-const CARD_WIDTH = width * 0.65;
+import { Image, Pressable, Text, View } from "react-native";
 
 const NewArriavals = () => {
   return (
     <View className="bg-white py-5 rounded-2xl mx-3 mb-6 shadow-sm">
-      <Text className="text-xl font-bold mx-4 mb-3 text-neutral-900">
-        New arrivals
-      </Text>
+      <Text className="text-xl font-bold mx-4 mb-3 text-neutral-900">New arrivals</Text>
       <FlashList
         data={products}
         horizontal
@@ -32,7 +27,7 @@ export const Product: FC<ProductProps> = ({ item }) => {
   const router = useRouter();
   return (
     <Pressable
-      onPress={() => router.push(`/modal/${item.id}`)}
+      onPress={() => router.push(`/product/${item.id}`)}
       className="w-[65vw] mr-4 bg-white rounded-2xl overflow-hidden elevation-3"
     >
       <Image
@@ -42,9 +37,7 @@ export const Product: FC<ProductProps> = ({ item }) => {
       />
 
       <View className="p-3">
-        <Text className="text-base font-semibold text-neutral-900">
-          {item.name}
-        </Text>
+        <Text className="text-base font-semibold text-neutral-900">{item.name}</Text>
         <Text className="mt-1 text-sm text-neutral-600">{item.price}</Text>
       </View>
     </Pressable>

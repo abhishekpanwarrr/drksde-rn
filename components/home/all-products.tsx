@@ -15,18 +15,13 @@ const AllProducts = () => {
         data={products}
         numColumns={2}
         keyExtractor={(item) => item.id.toString()}
-        // estimatedItemSize={260}
         contentContainerStyle={{
           paddingHorizontal: GAP,
           paddingBottom: GAP,
         }}
-        // @ts-ignore
-        columnWrapperStyle={{
-          justifyContent: "space-between",
-        }}
-        renderItem={({ item }) => (
+        renderItem={({ item, index }) => (
           <View style={{ width: CARD_WIDTH, marginBottom: GAP }}>
-            <Product item={item} />
+            <Product item={item} index={index} />
           </View>
         )}
       />
@@ -36,13 +31,13 @@ const AllProducts = () => {
 
 export default AllProducts;
 
-export const Product: FC<ProductProps> = ({ item }) => {
+export const Product: FC<ProductProps> = ({ item, index }) => {
   const router = useRouter();
 
   return (
     <Pressable
-      onPress={() => router.push(`/modal/${item.id}`)}
-      className="bg-white rounded-2xl overflow-hidden elevation-3"
+      onPress={() => router.push(`/product/${item.id}`)}
+      className={`bg-white rounded-2xl overflow-hidden elevation-3 ${index % 2 !== 1 && "mr-2"}`}
     >
       <Image
         source={{ uri: item.image }}
@@ -68,4 +63,5 @@ export const Product: FC<ProductProps> = ({ item }) => {
 
 interface ProductProps {
   item: { id: number; name: string; price: string; image: string };
+  index: number;
 }
