@@ -1,36 +1,32 @@
+import { useUser } from "@/context/user-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useState } from "react";
 import { Image, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const Settings = () => {
   const router = useRouter();
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
+  const {
+    state: { user },
+    dispatch,
+  } = useUser();
 
-  const user = {
-    name: "Abhishek Panwar",
-    email: "abhishekpanwarcse@gmail.com",
-    avatar:
-      "https://ui-avatars.com/api/?name=Abhishek+Panwar&background=0D8ABC&color=fff",
+  const handleLogout = () => {
+    dispatch({
+      type: "LOGOUT",
+    });
   };
-
   return (
     <SafeAreaView edges={["left", "right"]} className="flex-1 bg-neutral-100">
       {/* PROFILE CARD */}
       <View className="mx-4 bg-white rounded-2xl p-4 shadow-sm elevation-3">
-        {isLoggedIn ? (
+        {user ? (
           <View className="flex-row items-center">
-            <Image
-              source={{ uri: user.avatar }}
-              className="w-16 h-16 rounded-full"
-            />
-
+            {/* <Image source={{ uri: user?.avatar }} className="w-16 h-16 rounded-full" /> */}
+            <UserAvatar name={user?.name} avatar={user?.avatar} size={64} />
             <View className="ml-4 flex-1">
-              <Text className="text-lg font-semibold text-neutral-900">
-                {user.name}
-              </Text>
-              <Text className="text-sm text-neutral-500">{user.email}</Text>
+              <Text className="text-lg font-semibold text-neutral-900">{user?.name}</Text>
+              <Text className="text-sm text-neutral-500">{user?.email}</Text>
             </View>
           </View>
         ) : (
@@ -42,34 +38,26 @@ const Settings = () => {
       </View>
 
       {/* LOGGED-IN ACTIONS */}
-      {isLoggedIn && (
+      {user && (
         <View className="mt-6 mx-4 bg-white rounded-2xl shadow-sm elevation-3 overflow-hidden">
-          <SettingRow
-            icon="receipt-outline"
-            label="My Orders"
-            onPress={() => router.push("/")}
-          />
+          <SettingRow icon="receipt-outline" label="My Orders" onPress={() => router.push("/")} />
           <Divider />
-          <SettingRow
-            icon="wallet-outline"
-            label="Transactions"
-            onPress={() => router.push("/")}
-          />
+          <SettingRow icon="wallet-outline" label="Transactions" onPress={() => router.push("/")} />
         </View>
       )}
 
       {/* AUTH ACTION */}
       <View className="mt-6 mx-4">
-        {isLoggedIn ? (
+        {user ? (
           <Pressable
-            onPress={() => setIsLoggedIn(false)}
+            onPress={() => handleLogout()}
             className="bg-red-500 py-4 rounded-xl items-center"
           >
             <Text className="text-white font-semibold text-base">Logout</Text>
           </Pressable>
         ) : (
           <Pressable
-            onPress={() => setIsLoggedIn(true)}
+            onPress={() => router.push("/auth/login")}
             className="bg-black py-4 rounded-xl items-center"
           >
             <Text className="text-white font-semibold text-base">Login</Text>
@@ -99,3 +87,68 @@ const SettingRow = ({
 );
 
 const Divider = () => <View className="h-px bg-neutral-200 mx-4" />;
+
+type Props = {
+  name?: string | null;
+  avatar?: string | null;
+  size?: number;
+};
+
+const pastelColors = [
+  "#FADADD", // pink
+  "#E6E6FA", // lavender
+  "#DFF5EA", // mint
+  "#FFF1C1", // yellow
+  "#E0F2FE", // blue
+  "#FDE2E4", // rose
+  "#EDE9FE", // violet
+  "#ECFDF3", // green
+];
+function getPastelColor(seed: string) {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return pastelColors[Math.abs(hash) % pastelColors.length];
+}
+
+function UserAvatar({ name, avatar, size = 64 }: Props) {
+  const initial = name?.trim()?.charAt(0)?.toUpperCase() ?? "?";
+  const bgColor = getPastelColor(name || "guest");
+
+  if (avatar) {
+    return (
+      <Image
+        source={{ uri: avatar }}
+        style={{
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+        }}
+      />
+    );
+  }
+
+  return (
+    <View
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        backgroundColor: bgColor,
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <Text
+        style={{
+          color: "#111",
+          fontSize: size / 2,
+          fontWeight: "700",
+        }}
+      >
+        {initial}
+      </Text>
+    </View>
+  );
+}

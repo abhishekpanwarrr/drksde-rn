@@ -1,27 +1,33 @@
-import { HighlightedText } from "@/app/(tabs)/search";
-import { useRouter } from "expo-router";
+import { Product } from "@/types/data";
+import { Link } from "expo-router";
 import React from "react";
-import { Image, Text, TouchableOpacity, View } from "react-native";
+import { Image, Pressable, Text, View } from "react-native";
 
-export default function ProductCard({ item, saveRecentSearch, debouncedQuery }: any) {
-  const router = useRouter();
+interface ProductCardProps {
+  item: Product;
+  onPress?: () => void;
+}
+
+export default function ProductCard({ item, onPress }: ProductCardProps) {
+  const imageUrl =
+    item.primary_image || item.images?.[0]?.image_url || "https://picsum.photos/600/600";
+
+  const price = item.sale_price ?? item.base_price;
   return (
-    <TouchableOpacity
-      className="flex-row mb-4 bg-gray-100 rounded-xl overflow-hidden"
-      onPress={() => {
-        router.push(`/product/${item.id}`);
-        saveRecentSearch(debouncedQuery);
-      }}
-    >
-      <Image source={{ uri: item.image }} className="w-24 h-24" />
+    <Link href={`/product/${item.product_id}`} asChild>
+      <Pressable
+        onPress={onPress} // ✅ safe
+        className="flex-row mb-4 bg-gray-100 rounded-xl overflow-hidden"
+      >
+        <Image source={{ uri: imageUrl }} className="w-24 h-24" />
 
-      <View className="flex-1 px-3 py-2">
-        <HighlightedText text={item.name} highlight={debouncedQuery} />
-
-        <Text className="text-sm text-gray-500 capitalize mt-1">{item.category}</Text>
-
-        <Text className="text-base font-bold mt-2">{item.price}</Text>
-      </View>
-    </TouchableOpacity>
+        <View className="flex-1 px-3 py-2">
+          <Text numberOfLines={2} className="text-base font-semibold">
+            {item.name}
+          </Text>
+          <Text className="text-sm text-gray-500 mt-1">₹{price}</Text>
+        </View>
+      </Pressable>
+    </Link>
   );
 }

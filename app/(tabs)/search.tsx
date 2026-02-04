@@ -1,10 +1,36 @@
+type Props = {
+  text: string;
+  highlight: string;
+};
+
+export const HighlightedText = ({ text, highlight }: Props) => {
+  if (!highlight) return <Text>{text}</Text>;
+
+  const lowerText = text.toLowerCase();
+  const lowerHighlight = highlight.toLowerCase();
+  const index = lowerText.indexOf(lowerHighlight);
+
+  if (index === -1) return <Text>{text}</Text>;
+
+  const before = text.slice(0, index);
+  const match = text.slice(index, index + highlight.length);
+  const after = text.slice(index + highlight.length);
+
+  return (
+    <Text>
+      {before}
+      <Text className="bg-yellow-200 text-black font-semibold">{match}</Text>
+      {after}
+    </Text>
+  );
+};
+
 import ProductCard from "@/components/common/product-card";
-import { products } from "@/data/products";
+import { Product } from "@/types/data";
+import { apiRequest } from "@/utils/api";
 import { FlashList } from "@shopify/flash-list";
-import { useRouter } from "expo-router";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
-  Image,
   KeyboardAvoidingView,
   Platform,
   Text,
@@ -13,33 +39,59 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-const DEBOUNCE_DELAY = 300;
+
+const DEBOUNCE_DELAY = 400;
 const MAX_RECENT = 5;
 
 const Search = () => {
   const [query, setQuery] = useState("");
-  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [results, setResults] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
-  const router = useRouter();
-  /* ---------------- Debounce ---------------- */
+
+  const debounceTimer = useRef<NodeJS.Timeout | null>(null);
+  const abortController = useRef<AbortController | null>(null);
+
+  /* ---------------- Debounced DB Search ---------------- */
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedQuery(query.trim());
+    if (!query.trim()) {
+      setResults([]);
+      return;
+    }
+
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+    }
+
+    debounceTimer.current = setTimeout(async () => {
+      try {
+        // cancel previous request
+        abortController.current?.abort();
+        abortController.current = new AbortController();
+
+        setLoading(true);
+
+        const { data } = await apiRequest(`/products/search?q=${encodeURIComponent(query)}`, {
+          signal: abortController.current.signal,
+        });
+
+        setResults(data);
+      } catch (err: any) {
+        if (err.name !== "AbortError") {
+          console.error("SEARCH ERROR:", err);
+        }
+      } finally {
+        setLoading(false);
+      }
     }, DEBOUNCE_DELAY);
 
-    return () => clearTimeout(timer);
+    return () => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+      abortController.current?.abort();
+    };
   }, [query]);
 
-  /* ---------------- Filter Logic ---------------- */
-  const filteredProducts = useMemo(() => {
-    if (!debouncedQuery) return [];
-
-    const q = debouncedQuery.toLowerCase();
-    return products.filter(
-      (item) => item.name.toLowerCase().includes(q) || item.category.toLowerCase().includes(q),
-    );
-  }, [debouncedQuery]);
-  /* ---------------- Save Recent Search ---------------- */
+  /* ---------------- Recent Searches ---------------- */
   const saveRecentSearch = (text: string) => {
     if (!text) return;
 
@@ -49,29 +101,10 @@ const Search = () => {
     });
   };
 
-  /* ---------------- Render Product ---------------- */
-  const renderItem = ({ item }: any) => (
-    <TouchableOpacity
-      activeOpacity={0.8}
-      className="flex-row mb-4 bg-gray-100 rounded-xl overflow-hidden"
-      onPress={() => saveRecentSearch(debouncedQuery)}
-    >
-      <Image source={{ uri: item.image }} className="w-24 h-24" />
-
-      <View className="flex-1 px-3 py-2">
-        <Text numberOfLines={2} className="text-base font-semibold">
-          {item.name}
-        </Text>
-        <Text className="text-sm text-gray-500 capitalize mt-1">{item.category}</Text>
-        <Text className="text-base font-bold mt-2">{item.price}</Text>
-      </View>
-    </TouchableOpacity>
-  );
-
   return (
     <SafeAreaView className="flex-1 bg-white px-4">
       <KeyboardAvoidingView
-        className="flex-1 px-4"
+        className="flex-1"
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
       >
@@ -103,24 +136,25 @@ const Search = () => {
         )}
 
         {/* States */}
-        {!debouncedQuery ? (
+        {!query ? (
           <View className="flex-1 items-center justify-center">
             <Text className="text-gray-500">Start typing to search products</Text>
           </View>
-        ) : filteredProducts.length === 0 ? (
+        ) : loading ? (
+          <View className="flex-1 items-center justify-center">
+            <Text className="text-gray-500">Searching…</Text>
+          </View>
+        ) : results.length === 0 ? (
           <View className="flex-1 items-center justify-center">
             <Text className="text-gray-500">No products found</Text>
           </View>
         ) : (
           <FlashList
-            data={filteredProducts}
-            keyExtractor={(item) => item.id.toString()}
+            data={results}
+            // estimatedItemSize={100}
+            keyExtractor={(item) => item.product_id.toString()}
             renderItem={({ item }) => (
-              <ProductCard
-                item={item}
-                saveRecentSearch={saveRecentSearch}
-                debouncedQuery={debouncedQuery}
-              />
+              <ProductCard item={item} onPress={() => saveRecentSearch(query)} />
             )}
             showsVerticalScrollIndicator={false}
           />
@@ -131,30 +165,3 @@ const Search = () => {
 };
 
 export default Search;
-
-type Props = {
-  text: string;
-  highlight: string;
-};
-
-export const HighlightedText = ({ text, highlight }: Props) => {
-  if (!highlight) return <Text>{text}</Text>;
-
-  const lowerText = text.toLowerCase();
-  const lowerHighlight = highlight.toLowerCase();
-  const index = lowerText.indexOf(lowerHighlight);
-
-  if (index === -1) return <Text>{text}</Text>;
-
-  const before = text.slice(0, index);
-  const match = text.slice(index, index + highlight.length);
-  const after = text.slice(index + highlight.length);
-
-  return (
-    <Text>
-      {before}
-      <Text className="bg-yellow-200 text-black font-semibold">{match}</Text>
-      {after}
-    </Text>
-  );
-};

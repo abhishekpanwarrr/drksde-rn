@@ -2,8 +2,10 @@ import { Product } from "@/types/data";
 import { apiRequest } from "@/utils/api";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Image, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Image, Pressable, ScrollView, Text, View } from "react-native";
 const PLACEHOLDER_IMAGE = "https://dummyimage.com/800x600/eeeeee/000000&text=Product+Image";
+
+import { useCart } from "@/context/cart-context";
 
 const Field = ({ label, value }: { label: string; value: any }) => (
   <View className="flex-row justify-between py-2 border-b border-neutral-100">
@@ -14,6 +16,7 @@ const Field = ({ label, value }: { label: string; value: any }) => (
 
 export default function ModalScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { dispatch } = useCart();
 
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -100,7 +103,7 @@ export default function ModalScreen() {
           <Field label="Sale Price" value={product.sale_price} />
           <Field label="Cost Price" value={product.cost_price} />
           <Field label="Stock Quantity" value={product.stock_quantity} />
-          <Field label="Low Stock Threshold" value={product.low_stock_threshold} />
+          {/* <Field label="Low Stock Threshold" value={product.low_stock_threshold} /> */}
           <Field label="Is Featured" value={product.is_featured ? "Yes" : "No"} />
           <Field label="Is Active" value={product.is_active ? "Yes" : "No"} />
           <Field label="Weight" value={product.weight} />
@@ -113,8 +116,8 @@ export default function ModalScreen() {
           <Field label="Brand Logo" value={product.brand_logo} />
           <Field label="Brand Description" value={product.brand_description} />
 
-          <Field label="Created At" value={product.created_at} />
-          <Field label="Updated At" value={product.updated_at} />
+          {/* <Field label="Created At" value={product.created_at} />
+          <Field label="Updated At" value={product.updated_at} /> */}
         </View>
 
         {/* Variants */}
@@ -129,6 +132,15 @@ export default function ModalScreen() {
             <Text className="text-sm text-neutral-500">No variants available</Text>
           )}
         </View>
+        <Pressable
+          onPress={() => {
+            dispatch({ type: "ADD", product });
+            Alert.alert("Item added in cart");
+          }}
+          className="mt-8 bg-black py-4 rounded-xl items-center"
+        >
+          <Text className="text-white text-base font-semibold">Add to Cart</Text>
+        </Pressable>
       </View>
     </ScrollView>
   );
