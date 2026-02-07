@@ -14,7 +14,6 @@ export const unstable_settings = {
 };
 
 export default function RootLayout() {
-  const router = useRouter();
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <Context>
@@ -40,15 +39,7 @@ export default function RootLayout() {
             name="checkout/checkout"
             options={{
               title: "Checkout",
-              headerLeft: () => (
-                <Pressable
-                  onPress={() => router.back()}
-                  className="flex flex-row items-center gap-3"
-                >
-                  <Ionicons name="chevron-back" size={22} color={"black"} />
-                  <Text className="text-lg">Back</Text>
-                </Pressable>
-              ),
+              headerLeft: () => <BackButton />,
             }}
           />
           <Stack.Screen
@@ -61,6 +52,7 @@ export default function RootLayout() {
             name="user/orders"
             options={{
               title: "All orders",
+              headerLeft: () => <BackButton />,
             }}
           />
           <Stack.Screen
@@ -79,20 +71,25 @@ export default function RootLayout() {
             name="user/addresses"
             options={{
               title: "All address",
-              headerLeft: () => (
-                <Pressable
-                  onPress={() => router.back()}
-                  className="flex flex-row items-center gap-3"
-                >
-                  <Ionicons name="chevron-back" size={22} color={"black"} />
-                  <Text className="text-lg">Back</Text>
-                </Pressable>
-              ),
+              headerLeft: () => <BackButton />,
             }}
           />
         </Stack>
         <StatusBar style="auto" />
       </Context>
     </GestureHandlerRootView>
+  );
+}
+
+function BackButton() {
+  const router = useRouter();
+  return (
+    <Pressable
+      onPress={() => router.back()}
+      className="flex flex-row items-center gap-2 px-1"
+    >
+      <Ionicons name="chevron-back" size={22} color={"black"} />
+      <Text className="text-lg">Back</Text>
+    </Pressable>
   );
 }

@@ -1,4 +1,8 @@
 import { Drawer } from "expo-router/drawer";
+import { Pressable } from "react-native";
+import { UserAvatar } from "./settings";
+import { useUser } from "@/context/user-context";
+import { useRouter } from "expo-router";
 
 const HomeLayout = () => {
   return (
@@ -13,6 +17,7 @@ const HomeLayout = () => {
         options={{
           drawerLabel: "Home",
           title: "DRKSDE",
+          headerRight: () => <HeaderRight />,
         }}
       />
       <Drawer.Screen
@@ -27,3 +32,15 @@ const HomeLayout = () => {
 };
 
 export default HomeLayout;
+
+function HeaderRight() {
+  const {
+    state: { user },
+  } = useUser();
+  const router = useRouter();
+  return (
+    <Pressable className="mr-2" onPress={() => router.push("/settings")}>
+      <UserAvatar name={user?.name} avatar={user?.avatar} size={30} />
+    </Pressable>
+  );
+}
