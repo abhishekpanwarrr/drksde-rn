@@ -25,7 +25,9 @@ const Settings = () => {
             {/* <Image source={{ uri: user?.avatar }} className="w-16 h-16 rounded-full" /> */}
             <UserAvatar name={user?.name} avatar={user?.avatar} size={64} />
             <View className="ml-4 flex-1">
-              <Text className="text-lg font-semibold text-neutral-900">{user?.name}</Text>
+              <Text className="text-lg font-semibold text-neutral-900">
+                {user?.name}
+              </Text>
               <Text className="text-sm text-neutral-500">{user?.email}</Text>
             </View>
           </View>
@@ -40,9 +42,22 @@ const Settings = () => {
       {/* LOGGED-IN ACTIONS */}
       {user && (
         <View className="mt-6 mx-4 bg-white rounded-2xl shadow-sm elevation-3 overflow-hidden">
-          <SettingRow icon="receipt-outline" label="My Orders" onPress={() => router.push("/")} />
+          <SettingRow
+            icon="receipt-outline"
+            label="My Orders"
+            onPress={() => router.push("/user/orders")}
+          />
           <Divider />
-          <SettingRow icon="wallet-outline" label="Transactions" onPress={() => router.push("/")} />
+          <SettingRow
+            icon="wallet-outline"
+            label="Transactions"
+            onPress={() => router.push("/")}
+          />
+          <SettingRow
+            icon="wallet-outline"
+            label="Addresses"
+            onPress={() => router.push("/user/addresses")}
+          />
         </View>
       )}
 

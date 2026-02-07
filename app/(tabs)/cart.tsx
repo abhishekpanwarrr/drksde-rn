@@ -1,8 +1,11 @@
 import { useCart } from "@/context/cart-context";
+import { useRouter } from "expo-router";
 import { Image, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function CartScreen() {
+  const router = useRouter();
+
   const { state, dispatch } = useCart();
   if (!state.hydrated) {
     return null; // or loader
@@ -86,6 +89,14 @@ export default function CartScreen() {
             </View>
           );
         })}
+        <View className="mt-6 mb-10">
+          <Pressable
+            onPress={() => router.push("/checkout/checkout")}
+            className="bg-black py-4 rounded-xl items-center"
+          >
+            <Text className="text-white text-lg font-semibold">Proceed to Checkout</Text>
+          </Pressable>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );

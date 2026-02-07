@@ -35,6 +35,10 @@ export default function TabLayout() {
         name="cart"
         options={{
           tabBarBadge: totalItems,
+          tabBarBadgeStyle: {
+            color: "#fff",
+            backgroundColor: "#000",
+          },
           title: "Cart",
           tabBarIcon: ({ color }) => <Ionicons size={28} name="bag" color={color} />,
         }}

@@ -1,5 +1,6 @@
 import { useUser } from "@/context/user-context";
 import { apiRequest } from "@/utils/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { ActivityIndicator, Pressable, Text, TextInput } from "react-native";
@@ -40,7 +41,7 @@ export default function Login() {
         method: "POST",
         body: JSON.stringify(body),
       });
-
+      await AsyncStorage.setItem("@drksde_auth_token", res.token);
       // ✅ Save user + token
       dispatch({
         type: "LOGIN",
@@ -84,7 +85,8 @@ export default function Login() {
         placeholder="Email"
         keyboardType="email-address"
         autoCapitalize="none"
-        className="border border-gray-300 rounded-xl px-4 py-3 mb-4"
+        placeholderTextColor={"#000"}
+        className="border border-gray-300 rounded-xl px-4 py-3 mb-4 text-black"
       />
 
       {/* Password */}
@@ -93,7 +95,8 @@ export default function Login() {
         onChangeText={setPassword}
         placeholder="Password"
         secureTextEntry
-        className="border border-gray-300 rounded-xl px-4 py-3 mb-4"
+        placeholderTextColor={"#000"}
+        className="border border-gray-300 rounded-xl px-4 py-3 mb-4 text-black"
       />
 
       {/* Error */}
