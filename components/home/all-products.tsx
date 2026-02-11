@@ -1,8 +1,7 @@
 import { Product } from "@/types/data";
-import { apiRequest } from "@/utils/api";
 import { FlashList } from "@shopify/flash-list";
 import { useRouter } from "expo-router";
-import { FC, useEffect, useState } from "react";
+import { FC } from "react";
 import { Dimensions, Image, Pressable, Text, View } from "react-native";
 
 const GAP = 16;
@@ -10,16 +9,11 @@ const { width } = Dimensions.get("window");
 const CARD_WIDTH = (width - GAP * 3) / 2;
 const PLACEHOLDER_IMAGE = "https://picsum.photos/600/600";
 
-const AllProducts = () => {
-  const [products, setProducts] = useState<Product[]>([]);
+interface Props {
+  products: Product[];
+}
 
-  useEffect(() => {
-    const getProducts = async () => {
-      const { data } = await apiRequest("/products");
-      setProducts(data);
-    };
-    getProducts();
-  }, []);
+const AllProducts: FC<Props> = ({ products }) => {
   return (
     <View className="flex-1">
       <FlashList
@@ -44,7 +38,8 @@ export default AllProducts;
 
 export const ProductCard: FC<ProductCardProps> = ({ item, index }) => {
   const router = useRouter();
-  const imageUrl = item.primary_image || item.images?.[0]?.image_url || PLACEHOLDER_IMAGE;
+  const imageUrl =
+    item.primary_image || item.images?.[0]?.image_url || PLACEHOLDER_IMAGE;
 
   const price = Number(item.sale_price ?? item.base_price);
 
@@ -55,7 +50,11 @@ export const ProductCard: FC<ProductCardProps> = ({ item, index }) => {
         index % 2 === 0 ? "mr-2" : ""
       }`}
     >
-      <Image source={{ uri: imageUrl }} style={{ width: "100%", height: 180 }} resizeMode="cover" />
+      <Image
+        source={{ uri: imageUrl }}
+        style={{ width: "100%", height: 180 }}
+        resizeMode="cover"
+      />
 
       <View className="p-3 min-h-[72px] justify-between">
         <Text
@@ -66,7 +65,9 @@ export const ProductCard: FC<ProductCardProps> = ({ item, index }) => {
           {item.name}
         </Text>
 
-        <Text className="mt-1 text-sm text-neutral-600">₹{price.toFixed(2)}</Text>
+        <Text className="mt-1 text-sm text-neutral-600">
+          ₹{price.toFixed(2)}
+        </Text>
       </View>
     </Pressable>
   );

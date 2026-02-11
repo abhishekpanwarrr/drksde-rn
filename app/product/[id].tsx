@@ -1,7 +1,7 @@
 import { Product } from "@/types/data";
 import { apiRequest } from "@/utils/api";
 import { useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -16,21 +16,42 @@ const PLACEHOLDER_IMAGE =
 
 import { useCart } from "@/context/cart-context";
 
-const Field = ({ label, value }: { label: string; value: any }) => (
-  <View className="flex-row justify-between py-2 border-b border-neutral-100">
-    <Text className="text-sm text-neutral-500">{label}</Text>
-    <Text className="text-sm text-neutral-900 max-w-[60%] text-right">
-      {value ?? "—"}
-    </Text>
-  </View>
-);
+const Field = ({ label, value }: { label: string; value: any }) => {
+  let displayValue = "—";
+
+  if (Array.isArray(value)) {
+    displayValue = value.map((v) => v.name ?? JSON.stringify(v)).join(", ");
+  } else if (typeof value === "object" && value !== null) {
+    displayValue = JSON.stringify(value);
+  } else if (value !== null && value !== undefined) {
+    displayValue = String(value);
+  }
+
+  return (
+    <View className="flex-row justify-between py-2 border-b border-neutral-100">
+      <Text className="text-sm text-neutral-500">{label}</Text>
+      <Text className="text-sm text-neutral-900 max-w-[60%] text-right">
+        {displayValue}
+      </Text>
+    </View>
+  );
+};
 
 export default function ModalScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { dispatch } = useCart();
+  const [selectedVariant, setSelectedVariant] = useState<any>(null);
 
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
+  const displayPrice = useMemo(() => {
+    if (!product) return 0;
+
+    const basePrice = Number(product.sale_price ?? product.base_price) || 0;
+    const adjustment = Number(selectedVariant?.price_adjustment ?? 0);
+
+    return basePrice + adjustment;
+  }, [product, selectedVariant]);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -46,6 +67,15 @@ export default function ModalScreen() {
 
     fetchProduct();
   }, [id]);
+
+  useEffect(() => {
+    if (product?.variants?.length) {
+      const defaultVariant =
+        product.variants.find((v) => v.is_default) || product.variants[0];
+
+      setSelectedVariant(defaultVariant);
+    }
+  }, [product]);
 
   if (loading) {
     return (
@@ -91,7 +121,7 @@ export default function ModalScreen() {
         {/* Price */}
         <View className="mt-4">
           <Text className="text-xl font-semibold text-green-600">
-            ₹{product.sale_price ?? product.base_price}
+            ₹{displayPrice.toFixed(2)}
           </Text>
 
           {product.sale_price && (
@@ -114,10 +144,14 @@ export default function ModalScreen() {
         {/* Stock */}
         <Text
           className={`mt-4 text-sm font-medium ${
-            product.stock_quantity > 0 ? "text-green-600" : "text-red-500"
+            (selectedVariant?.stock_quantity ?? product.stock_quantity) > 0
+              ? "text-green-600"
+              : "text-red-500"
           }`}
         >
-          {product.stock_quantity > 0 ? "In Stock" : "Out of Stock"}
+          {(selectedVariant?.stock_quantity ?? product.stock_quantity) > 0
+            ? "In Stock"
+            : "Out of Stock"}
         </Text>
 
         {/* DETAILS */}
@@ -141,7 +175,11 @@ export default function ModalScreen() {
           <Field label="Weight" value={product.weight} />
           <Field label="Dimensions" value={product.dimensions} />
           <Field label="Tax Class" value={product.tax_class} />
-          <Field label="Categories" value={product.categories} />
+          <Field
+            label="Categories"
+            // @ts-ignore
+            value={product?.categories?.map((c: any) => c.name).join(", ")}
+          />
 
           <Field label="Brand ID" value={product.brand_id} />
           <Field label="Brand Name" value={product.brand_name} />
@@ -159,9 +197,44 @@ export default function ModalScreen() {
           </Text>
 
           {product.variants ? (
-            <Text className="text-sm text-neutral-700">
-              {JSON.stringify(product.variants, null, 2)}
-            </Text>
+            <View className="gap-3">
+              {product.variants.map((variant) => {
+                const isSelected =
+                  selectedVariant?.variant_id === variant.variant_id;
+
+                return (
+                  <Pressable
+                    key={variant.variant_id}
+                    onPress={() => setSelectedVariant(variant)}
+                    className={`p-3 rounded-lg border ${
+                      isSelected
+                        ? "border-black bg-neutral-100"
+                        : "border-neutral-200"
+                    }`}
+                  >
+                    <View className="flex-row justify-between items-center">
+                      <Text className="text-sm font-medium text-neutral-900">
+                        SKU: {variant.sku}
+                      </Text>
+
+                      {variant.is_default && (
+                        <Text className="text-xs text-green-600">Default</Text>
+                      )}
+                    </View>
+
+                    <Text className="text-xs text-neutral-600 mt-1">
+                      Stock: {variant.stock_quantity}
+                    </Text>
+
+                    {variant.price_adjustment !== 0 && (
+                      <Text className="text-xs text-neutral-600 mt-1">
+                        Price adjustment: ₹{variant.price_adjustment}
+                      </Text>
+                    )}
+                  </Pressable>
+                );
+              })}
+            </View>
           ) : (
             <Text className="text-sm text-neutral-500">
               No variants available
@@ -169,11 +242,23 @@ export default function ModalScreen() {
           )}
         </View>
         <Pressable
+          disabled={(selectedVariant?.stock_quantity ?? 0) <= 0}
           onPress={() => {
-            dispatch({ type: "ADD", product });
+            dispatch({
+              type: "ADD",
+              product: {
+                ...product,
+                selectedVariant,
+                final_price: displayPrice,
+              },
+            });
             Alert.alert("Item added in cart");
           }}
-          className="mt-8 bg-black py-4 rounded-xl items-center"
+          className={`mt-8 py-4 rounded-xl items-center ${
+            (selectedVariant?.stock_quantity ?? 0) > 0
+              ? "bg-black"
+              : "bg-neutral-400"
+          }`}
         >
           <Text className="text-white text-base font-semibold">
             Add to Cart
