@@ -3,15 +3,30 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Image, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useContext } from "react";
+import { BiometricContext } from "@/context/biometric-context";
+import { Switch } from "react-native";
 
 const Settings = () => {
   const router = useRouter();
+  const { enabled, enableBiometric, disableBiometric } =
+    useContext(BiometricContext);
 
   const {
     state: { user },
     dispatch,
   } = useUser();
 
+  const handleEnableBiomatric = async (value: any) => {
+    console.log("value", value);
+
+    if (value) {
+      const success = await enableBiometric();
+      if (!success) return;
+    } else {
+      await disableBiometric();
+    }
+  };
   const handleLogout = () => {
     dispatch({
       type: "LOGOUT",
@@ -81,6 +96,22 @@ const Settings = () => {
           </Pressable>
         )}
       </View>
+      {/* BIOMETRIC */}
+      {user && (
+        <View className="mt-6 mx-4 bg-white rounded-2xl shadow-sm elevation-3 overflow-hidden">
+          <View className="flex-row items-center px-4 py-4">
+            <Ionicons name="finger-print-outline" size={22} color="#111827" />
+            <Text className="ml-4 text-base flex-1">
+              Enable Face ID / Fingerprint
+            </Text>
+
+            <Switch
+              value={enabled}
+              onValueChange={async (value) => handleEnableBiomatric(value)}
+            />
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 };

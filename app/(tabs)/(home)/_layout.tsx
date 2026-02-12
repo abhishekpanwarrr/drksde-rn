@@ -40,7 +40,7 @@ function HeaderRight() {
   const router = useRouter();
   return (
     <Pressable className="mr-2" onPress={() => router.push("/settings")}>
-      <UserAvatar name={user?.name} avatar={user?.avatar} size={30} />
+      {user && <UserAvatar name={user?.name} avatar={user?.avatar} size={30} />}
     </Pressable>
   );
 }
